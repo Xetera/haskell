@@ -1,7 +1,8 @@
-import System.Directory (listDirectory)
+import System.Directory (listDirectory, doesDirectoryExist)
 import System.IO
 import Control.Monad
 import Data.List
+import System.Environment (getArgs)
 
 fileName = "something.txt"
 
@@ -27,7 +28,24 @@ findFile target directory = head' <$> findFiles target directory
 head' [] = Nothing
 head' (x:xs) = Just x
 
+-- glob :: String -> FilePath -> IO [FilePath]
+-- glob = getFiles
+
+findDirectories path = let joinBase = joinPaths path in
+    map joinBase <$> listDirectory path >>= filterM doesDirectoryExist
+
+
+joinPaths :: String -> String -> String
+joinPaths [] a = a
+joinPaths a [] = a
+joinPaths x b
+    | last x == '/' && head b == '/' = init x ++ b
+    | last x == '/' || head b == '/' = x ++ b
+    | otherwise = intercalate "/" [x, b]
 
 main = do
-    findFiles "." "." 
-    
+    args <- getArgs
+    findDirectories "./test/inner"
+    -- case args of 
+    --     [x] -> findDirectories x
+    --     [] -> findDirectories "test"

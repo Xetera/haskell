@@ -29,11 +29,29 @@ head' :: [a] -> Maybe a
 head' [] = Nothing
 head' (x:xs) = Just x
 
-glob :: String -> FilePath -> IO [FilePath]
-glob pattern path 
-    | null <$> files = return []
-    | otherwise = return []
-    where files = listDirectory path
+-- traverseFolder [] files = return files
+-- traverseFolder folders files = 
+--     case xs of 
+--         ()
+--         where empty
+
+
+glob :: FilePath -> IO [FilePath]
+glob path = do
+    files <- listDirectory path
+    case files of 
+        [] -> return []
+        (xs) -> do
+            let joinDir = joinPaths path
+            directories <- filterM doesDirectoryExist xs
+            dirFiles <- filterM (liftM not <$> doesDirectoryExist) xs
+            let concatFiles = liftM2 (++)
+            let rFiles = return $ map joinDir dirFiles
+            case directories of
+                [] -> rFiles
+                _ -> concat <$> mapM (\dir -> rFiles `concatFiles` (glob $ joinDir dir)) directories
+            -- dirFiles ++ mapM glob pattern $ directories
+            
 
 findDirectories path = let joinBase = joinPaths path in
     map joinBase <$> listDirectory path >>= filterM doesDirectoryExist
@@ -42,14 +60,11 @@ findDirectories path = let joinBase = joinPaths path in
 joinPaths :: String -> String -> String
 joinPaths [] b = b
 joinPaths x [] = x
-joinPaths x b
+joinPaths x b 
     | last x == '/' && head b == '/' = init x ++ b
     | last x == '/' || head b == '/' = x ++ b
     | otherwise = intercalate "/" [x, b]
 
 main = do
     args <- getArgs
-    findDirectories "./test"
-    -- case args of 
-    --     [x] -> findDirectories x
-    --     [] -> findDirectories "test"
+    glob "."

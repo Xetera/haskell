@@ -29,27 +29,46 @@ head' :: [a] -> Maybe a
 head' [] = Nothing
 head' (x:xs) = Just x
 
-glob :: String -> FilePath -> IO [FilePath]
-glob pattern path 
-    | null <$> files = return []
-    | otherwise = return []
-    where files = listDirectory path
+-- glob :: String -> FilePath -> IO [FilePath]
+-- glob pattern path 
+--     | null <$> files = return []
+--     | otherwise = return []
+--     where files = listDirectory path
 
-findDirectories path = let joinBase = joinPaths path in
-    map joinBase <$> listDirectory path >>= filterM doesDirectoryExist
+-- findDirectories path = let joinBase = joinPaths path in
+--     map joinBase <$> listDirectory path >>= filterM doesDirectoryExist
 
 
-joinPaths :: String -> String -> String
-joinPaths [] b = b
-joinPaths x [] = x
-joinPaths x b
-    | last x == '/' && head b == '/' = init x ++ b
-    | last x == '/' || head b == '/' = x ++ b
-    | otherwise = intercalate "/" [x, b]
+-- joinPaths :: String -> String -> String
+-- joinPaths [] b = b
+-- joinPaths x [] = x
+-- joinPaths x b
+--     | last x == '/' && head b == '/' = init x ++ b
+--     | last x == '/' || head b == '/' = x ++ b
+--     | otherwise = intercalate "/" [x, b]
+
+extractExtension :: String -> String
+extractExtension = dropWhile (/= '.')
+
+filterExtension :: String -> [FilePath] -> [FilePath]
+filterExtension extension files = filter (\file -> extractExtension file == extension) files
+
+filterDir :: String -> FilePath -> IO [FilePath]
+filterDir extension directory = filterExtension extension <$> listDirectory directory
+
+-- renameAll :: String -> String -> FilePath -> IO Int
+-- renameAll fromExt toExt path = do
+
+    
+
 
 main = do
-    args <- getArgs
-    findDirectories "./test"
+    -- args <- getArgs
+    -- -- findDirectories "./test"
+    -- case args of 
+    -- filterDir "hs" "."
+    filterDir ".gignore" "."
+        
     -- case args of 
     --     [x] -> findDirectories x
     --     [] -> findDirectories "test"

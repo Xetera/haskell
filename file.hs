@@ -29,23 +29,33 @@ head' :: [a] -> Maybe a
 head' [] = Nothing
 head' (x:xs) = Just x
 
--- glob :: String -> FilePath -> IO [FilePath]
--- glob pattern path 
---     | null <$> files = return []
---     | otherwise = return []
---     where files = listDirectory path
+glob :: FilePath -> IO [FilePath]
+glob path = do
+    files <- listDirectory path
+    case files of 
+        [] -> return []
+        (xs) -> do
+            let joinDir = joinPaths path
+            directories <- filterM doesDirectoryExist xs
+            dirFiles <- filterM (liftM not <$> doesDirectoryExist) xs
+            let concatFiles = liftM2 (++)
+            let rFiles = return $ map joinDir dirFiles
+            case directories of
+                [] -> rFiles
+                _ -> concat <$> mapM (\dir -> rFiles `concatFiles` (glob $ joinDir dir)) directories
+            
 
 -- findDirectories path = let joinBase = joinPaths path in
 --     map joinBase <$> listDirectory path >>= filterM doesDirectoryExist
 
 
--- joinPaths :: String -> String -> String
--- joinPaths [] b = b
--- joinPaths x [] = x
--- joinPaths x b
---     | last x == '/' && head b == '/' = init x ++ b
---     | last x == '/' || head b == '/' = x ++ b
---     | otherwise = intercalate "/" [x, b]
+joinPaths :: String -> String -> String
+joinPaths [] b = b
+joinPaths x [] = x
+joinPaths x b
+    | last x == '/' && head b == '/' = init x ++ b
+    | last x == '/' || head b == '/' = x ++ b
+    | otherwise = intercalate "/" [x, b]
 
 extractExtension :: String -> String
 extractExtension = dropWhile (/= '.')
@@ -67,7 +77,7 @@ main = do
     -- -- findDirectories "./test"
     -- case args of 
     -- filterDir "hs" "."
-    filterDir ".gignore" "."
+    glob "."
         
     -- case args of 
     --     [x] -> findDirectories x

@@ -7,24 +7,18 @@ import Data.Functor.Identity
 import Text.Parsec
 import Text.Parsec.Char (letter)
 
-data JComposite
-  = JArray [[JValue]]
-  | JObject [(String, JValue)]
-  deriving (Show)
-
-data JAtom
+data Json
   = JNum Int
+  | JArray [[Json]]
+  | JObject [(String, Json)]
   | JKey String
   | JBool Bool
   | JNull
   deriving (Show)
 
-data JValue = Atom JAtom | Composite JComposite deriving (Show)
-
---value ::ParsecT [Char] a Identity JValue
 value =
-      JArray    <$> array
-  <|> JObject    <$> object
+      JArray       <$> array
+  <|> JObject      <$> object
   <|> JKey         <$> quotedString
   <|> JBool  True  <$  string "true"
   <|> JBool  False <$  string "false"
@@ -46,19 +40,21 @@ kv = do
   spaces
   val <- value
   spaces
-  rest <- try $ char ',' *> kv
+  rest <- optionMaybe $ char ',' *> kv
   spaces
-  return $ (key, val) : rest
+  return $ (key, val) : case rest of
+                          Just e -> e
+                          _ -> []
 
 array = between (char '[') (char ']') $
   many $ ignoringSpaces value `sepBy` ignoringSpaces (char ',')
 
 object = between (char '{') (char '}') $ ignoringSpaces kv
 
-input = "{\"test 1321 \": 123, \"y\": \"eet\" }"
+input = "{\"test 1321 \": \"1234\", \"y\": { \"we\": \"did it boys\" }  }"
 --input = "[ 1 , [ false ,3 ], 3,[4,[[]]],  5   ]"
 
-parseJson = Composite <$> array <|> object
+parseJson = object
 
 run :: IO ()
 run = print $ parse parseJson "" input
